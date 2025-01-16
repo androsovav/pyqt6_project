@@ -1,53 +1,95 @@
 import sys
+from PyQt6.QtWidgets import (
+    QApplication, QMainWindow, QPushButton, QLabel,
+    QFileDialog, QVBoxLayout, QWidget, QMessageBox
+)
+import filtered
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication, QLabel, QMainWindow, QTextEdit
-
+# Здесь находится скрипт для работы с CSV-файлом
+def process_csv(file_path):
+    # Функция для обработки выбранного CSV файла
+    try:
+        filtered.script(file_path)
+    except Exception as e:
+        QMessageBox.critical(None, "Ошибка", f"Произошла ошибка: {str(e)}")
 
 class MainWindow(QMainWindow):
     def __init__(self):
+        # Инициализация главного окна приложения
         super().__init__()
-        self.label = QLabel("Click in this window")
-        self.setCentralWidget(self.label)
 
-    def mousePressEvent(self, e):
-        print(e.button())
-        if e.button() == Qt.MouseButton.LeftButton:
-            # здесь обрабатываем нажатие левой кнопки
-            self.label.setText("mousePressEvent LEFT")
+        # Установка заголовка окна
+        self.setWindowTitle("CSV Processor")
+        # Установка начального размера окна
+        self.setGeometry(300, 300, 400, 200)
 
-        elif e.button() == Qt.MouseButton.MiddleButton:
-            # здесь обрабатываем нажатие средней кнопки.
-            self.label.setText("mousePressEvent MIDDLE")
+        # Переменная для хранения пути к выбранному файлу
+        self.csv_file_path = ""
 
-        elif e.button() == Qt.MouseButton.RightButton:
-            # здесь обрабатываем нажатие правой кнопки.
-            self.label.setText("mousePressEvent RIGHT")
+        # Инициализация пользовательского интерфейса
+        self.init_ui()
 
-    def mouseReleaseEvent(self, e):
-        if e.button() == Qt.MouseButton.LeftButton:
-            self.label.setText("mouseReleaseEvent LEFT")
+    def init_ui(self):
+        # Создание и настройка элементов интерфейса
 
-        elif e.button() == Qt.MouseButton.MiddleButton:
-            self.label.setText("mouseReleaseEvent MIDDLE")
+        # Метка, которая будет отображать текст
+        self.label = QLabel("Выберите CSV файл", self)
+        self.label.setStyleSheet("font-size: 16px;")
 
-        elif e.button() == Qt.MouseButton.RightButton:
-            self.label.setText("mouseReleaseEvent RIGHT")
+        # Кнопка для выбора файла
+        self.choose_file_button = QPushButton("Выбрать файл", self)
+        # Подключаем событие нажатия кнопки к методу выбора файла
+        self.choose_file_button.clicked.connect(self.choose_file)
 
-    def mouseDoubleClickEvent(self, e):
-        if e.button() == Qt.MouseButton.LeftButton:
-            self.label.setText("mouseDoubleClickEvent LEFT")
+        # Кнопка для обработки файла
+        self.process_button = QPushButton("Обработать файл", self)
+        # По умолчанию кнопка отключена (активируется после выбора файла)
+        self.process_button.setEnabled(False)
+        # Подключаем событие нажатия кнопки к методу обработки файла
+        self.process_button.clicked.connect(self.process_file)
 
-        elif e.button() == Qt.MouseButton.MiddleButton:
-            self.label.setText("mouseDoubleClickEvent MIDDLE")
+        # Создаем вертикальный макет для размещения элементов
+        layout = QVBoxLayout()
+        layout.addWidget(self.label)
+        layout.addWidget(self.choose_file_button)
+        layout.addWidget(self.process_button)
 
-        elif e.button() == Qt.MouseButton.RightButton:
-            self.label.setText("mouseDoubleClickEvent RIGHT")
+        # Устанавливаем центральный виджет и применяем макет
+        central_widget = QWidget()
+        central_widget.setLayout(layout)
+        self.setCentralWidget(central_widget)
 
+    def choose_file(self):
+        # Метод для выбора файла через диалог
+        file_dialog = QFileDialog(self)
+        file_dialog.setNameFilter("CSV and Text Files (*.csv *.txt)")  # Фильтр для отображения файлов CSV и TXT
+        if file_dialog.exec():
+            # Получаем список выбранных файлов
+            selected_files = file_dialog.selectedFiles()
+            if selected_files:
+                # Сохраняем путь к выбранному файлу
+                self.csv_file_path = selected_files[0]
+                # Отображаем путь в метке
+                self.label.setText(f"Выбран файл: {self.csv_file_path}")
+                # Активируем кнопку обработки
+                self.process_button.setEnabled(True)
 
-app = QApplication(sys.argv)
+    def process_file(self):
+        # Метод для обработки выбранного файла
+        if self.csv_file_path:
+            # Передаем путь к файлу в функцию обработки
+            process_csv(self.csv_file_path)
+        else:
+            # Если файл не выбран, выводим предупреждение
+            QMessageBox.warning(self, "Внимание", "Файл не выбран!")
 
-window = MainWindow()
-window.show()
+if __name__ == "__main__":
+    # Создаем экземпляр приложения
+    app = QApplication(sys.argv)
 
-app.exec()
+    # Создаем и отображаем главное окно
+    window = MainWindow()
+    window.show()
+
+    # Запускаем главный цикл событий приложения
+    sys.exit(app.exec())
